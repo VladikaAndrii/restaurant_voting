@@ -24,7 +24,7 @@ SECRET_KEY = 'django-insecure-sl6vh*dphivh2jzg$le09um!7d5w!5ph@uu9u3*penh#rdem3_
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["127.0.0.0", ]
+ALLOWED_HOSTS = ["127.0.0.1", "127.0.0.1:8000"]
 
 # Application definition
 
@@ -126,3 +126,5 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10
 }
+
+AUTH_USER_MODEL = 'api.User'
