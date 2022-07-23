@@ -1,14 +1,12 @@
 from django.contrib import admin
-from api.models import Role, User, Employee, Restaurant, Menu, Vote
+from api.models import *
 # Register your models here.
-admin.site.register(Role)
 admin.site.register(User)
 
 
 class EmployeeAdmin(admin.ModelAdmin):
     list_display = (
         'id',
-        'employee_no',
         'user',
         'created_at',
         'created_by'
@@ -19,7 +17,6 @@ class RestaurantAdmin(admin.ModelAdmin):
     list_display = (
         'id',
         'name',
-        'contact_no',
         'address',
         'created_at',
         'created_by'

@@ -3,18 +3,6 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 
-class Role(models.Model):
-    """Represents role class model"""
-    name = models.CharField(
-        max_length=200)
-
-    class Meta:
-        ordering = ['-id']
-
-    def __str__(self):
-        return self.name
-
-
 class User(AbstractUser):
     """Represents user class model"""
     id = models.CharField(
@@ -22,10 +10,9 @@ class User(AbstractUser):
         unique=True,
         default=uuid.uuid4,
         primary_key=True)
-    roles = models.ManyToManyField(Role, blank=True)
-    org_id = models.IntegerField(null=True, blank=True)
-    phone = models.CharField(max_length=15, null=True, blank=True)
-    identification_no = models.CharField(max_length=100, blank=True, null=True)
+    phone = models.CharField(max_length=15)
+    email = models.EmailField(max_length=255)
+    password = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.CharField(max_length=50, null=True, blank=True)
@@ -39,11 +26,6 @@ class User(AbstractUser):
 
 class Employee(models.Model):
     """Represents employee class model"""
-    employee_no = models.CharField(
-        max_length=50,
-        unique=True,
-        null=True,
-        blank=True)
     user = models.ForeignKey(
         User,
         null=True,
@@ -86,8 +68,6 @@ class Menu(models.Model):
     """Represents menu class model"""
     restaurant = models.ForeignKey(
         Restaurant,
-        null=True,
-        blank=True,
         on_delete=models.CASCADE)
     file = models.FileField(upload_to='menus/')
     created_at = models.DateTimeField(auto_now_add=True)
