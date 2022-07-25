@@ -95,14 +95,12 @@ class UserLoginAPIView(APIView):
     def post(self, request):
         try:
             user = User.objects.get(email=request.data["email"])
-            print(user)
-            print(request.data["password"])
-            print(user.password)
             if check_password(request.data["password"], user.password):
 
                 payload = jwt_payload_handler(user)
 
                 token = jwt_encode_handler(payload)
+                print(token)
 
                 user.save()
                 fullname = user.first_name + " " + user.last_name
@@ -130,12 +128,13 @@ class UserLoginAPIView(APIView):
 
 
 class UserLogoutView(APIView):
-    permission_classes = (IsAuthenticated,)
-
+    # permission_classes = (IsAuthenticated,)
+    print("i start")
     def get(self, request):
         print(str(request.auth))
         try:
             username = jwt_decode_handler(request.auth).get('username')
+            print(username)
             user = User.objects.get(username=username)
             payload = jwt_payload_handler(user)
             jwt_encode_handler(payload)
