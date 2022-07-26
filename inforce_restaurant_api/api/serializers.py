@@ -3,16 +3,16 @@ from api.models import User, Employee, Menu, Restaurant
 
 
 class UserSerializer(serializers.ModelSerializer):
-
     id = serializers.CharField(read_only=True)
+    password = serializers.CharField(write_only=True)
 
     class Meta:
         model = User
+
         fields = [
             "id",
             "first_name",
             "last_name",
-            "username",
             "phone",
             "email",
             "password"
@@ -37,11 +37,11 @@ class UserDetailSerializer(serializers.ModelSerializer):
 class UserLoginSerializer(serializers.Serializer):
     token = serializers.CharField(allow_blank=True, read_only=True)
     password = serializers.CharField()
-    username = serializers.CharField()
+    email = serializers.CharField()
 
     class Meta:
         fields = [
-            'username',
+            'email',
             'password',
         ]
         # extra_kwargs = {"password":

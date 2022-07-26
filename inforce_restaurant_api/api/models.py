@@ -11,11 +11,14 @@ class User(AbstractUser):
         default=uuid.uuid4,
         primary_key=True)
     phone = models.CharField(max_length=15)
-    email = models.EmailField(max_length=255)
+    email = models.EmailField(max_length=255, unique=True)
     password = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.CharField(max_length=50, null=True, blank=True)
+    username = None
+    USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = []
 
     class Meta:
         ordering = ['-id']
@@ -45,14 +48,8 @@ class Employee(models.Model):
 class Restaurant(models.Model):
     """Represents restaurant class model"""
     name = models.CharField(unique=True, max_length=255)
-    contact_no = models.CharField(
-        max_length=255,
-        blank=True,
-        null=True)
-    address = models.CharField(
-        max_length=255,
-        blank=True,
-        null=True)
+    contact_no = models.CharField(max_length=255)
+    address = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.CharField(max_length=50, null=True, blank=True)

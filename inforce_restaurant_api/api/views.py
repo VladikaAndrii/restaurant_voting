@@ -1,32 +1,30 @@
-from datetime import datetime
 from datetime import date, timedelta
+from datetime import datetime
 
+import datetime
+import jwt
 from django.conf import settings
-from django.template import loader
-from django.utils.html import strip_tags
+from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import check_password
-from django.db.models import Q
-from django.db.models import Sum, Max
 from django.db import connection
 from django.db.models import F, Window
+from django.db.models import Max
+from django.db.models import Q
 from django.db.models.functions import Rank
-
-from rest_framework import permissions
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
 from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework import permissions
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework import permissions
 
 # from .tasks import *
 from api.models import *
 from api.serializers import *
 from .custom_jwt import (
-    jwt_payload_handler,
-    jwt_encode_handler,
     jwt_decode_handler
 )
-
 
 todays_date = settings.CURRENT_DATE.date()
 
@@ -35,57 +33,10 @@ class RegisterUserAPIView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
-    def create(self, request, *args, **kwargs):
-        request.data["is active"] = True
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-
     def perform_create(self, serializer):
         instance = serializer.save()
         instance.set_password(instance.password)
         instance.save()
-
-
-# class RegisterUserAPIView(APIView):
-#     def post(self, request, format=None):
-#         req = request.data
-#
-#         serializer = UserSerializer(data=req)
-#
-#         if serializer.is_valid():
-#             try:
-#                 new_user = User.objects.create(
-#                     username=req.get('email'),
-#                     email=req.get('email'),
-#                     # password=req.get("password"),
-#                     first_name=req.get('first_name').capitalize(),
-#                     last_name=req.get('last_name').capitalize(),
-#                     is_active=True,
-#                     phone=req.get('phone'),
-#                     is_staff=True
-#                 )
-#                 password = req.get("password")
-#                 user_password = new_user.set_password(password)
-#                 new_user.save()
-#
-#
-#                 login_site = settings.LOGIN_REDIRECT_URL
-#
-#                 ser = UserDetailSerializer(new_user)
-#                 text = 'Check your email for login information'
-#                 res = {
-#                     "msg": f"Successfully registered.{text}",
-#                     "data": ser.data,
-#                     "success": True}
-#                 return Response(data=res, status=status.HTTP_201_CREATED)
-#             except Exception as e:
-#                 res = {"msg": str(e), "data": None, "success": False}
-#                 return Response(data=res, status=status.HTTP_400_BAD_REQUEST)
-#         res = {"msg": str(serializer.errors), "data": None, "success": False}
-#         return Response(data=res, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserLoginAPIView(APIView):
@@ -93,28 +44,34 @@ class UserLoginAPIView(APIView):
     serializer_class = UserLoginSerializer
 
     def post(self, request):
+        email = request.data["email"]
+        password = request.data["password"]
         try:
-            user = User.objects.get(email=request.data["email"])
-            if check_password(request.data["password"], user.password):
+            user = User.objects.get(email=email)
+            fullname = user.first_name + " " + user.last_name
+            if check_password(password, user.password):
+                pyload = {
+                    "id": user.id,
+                    "full_name": fullname,
+                    "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=60),
+                    "iat": datetime.datetime.utcnow()
+                }
 
-                payload = jwt_payload_handler(user)
-
-                token = jwt_encode_handler(payload)
-                print(token)
-
+                jwt_token = jwt.encode(pyload, settings.SECRET_KEY, algorithm="HS256")
                 user.save()
-                fullname = user.first_name + " " + user.last_name
-                res = {
+
+                response = Response()
+                response.set_cookie(key="jwt", value=jwt_token, httponly=True)
+
+                response.data = {
                     "msg": "Login success",
                     "success": True,
                     "data": {
                         "name": fullname,
-                        "username": user.username,
                         "id": user.id,
-                        "token": token, }
+                        "token": jwt_token, }
                 }
-                return Response(data=res, status=status.HTTP_200_OK)
-
+                return response
             else:
                 res = {
                     "msg": "Invalid login credentials",
@@ -122,50 +79,46 @@ class UserLoginAPIView(APIView):
                     "success": False}
                 return Response(data=res, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            print("3")
             res = {"msg": str(e), "success": False, "data": None}
             return Response(data=res, status=status.HTTP_200_OK)
 
 
 class UserLogoutView(APIView):
     # permission_classes = (IsAuthenticated,)
-    print("i start")
-    def get(self, request):
-        print(str(request.auth))
-        try:
-            username = jwt_decode_handler(request.auth).get('username')
-            print(username)
-            user = User.objects.get(username=username)
-            payload = jwt_payload_handler(user)
-            jwt_encode_handler(payload)
-            res = {
-                "msg": "User logged out successfully",
-                "success": True,
-                "data": None}
-            return Response(data=res, status=status.HTTP_205_RESET_CONTENT)
-        except Exception as e:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    def post(self, request):
+        response = Response()
+        response.delete_cookie("jwt")
+        response.data = {
+            "massage": "You successful logout!"
+        }
+        return response
 
 
-class CreateRestaurantAPIView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+class CreateRestaurantAPIView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = CreateRestaurantSerializer
 
-    def post(self, request, format=None):
-        # req = request.data
-        user = {'created_by': jwt_decode_handler(request.auth).get('username')}
-        req = dict(request.data)
-        req.update(user)
-        serializer = CreateRestaurantSerializer(data=req)
-        if serializer.is_valid():
-            serializer.save()
-            res = {
-                "msg": "Restaurant Created",
-                "success": True,
-                "data": serializer.data}
-            return Response(data=res, status=status.HTTP_201_CREATED)
 
-        res = {"msg": str(serializer.errors), "success": False, "data": None}
-        return Response(data=res, status=status.HTTP_400_BAD_REQUEST)
+# class CreateRestaurantAPIView(APIView):
+#     permission_classes = (permissions.IsAuthenticated,)
+#
+#     def post(self, request, format=None):
+#         # req = request.data
+#         # user = {'created_by': jwt.decode(request.auth).get('id')}
+#         # req = dict(request.data)
+#         # req.update(user)
+#         serializer = CreateRestaurantSerializer(data=req)
+#         if serializer.is_valid():
+#             serializer.save()
+#             res = {
+#                 "msg": "Restaurant Created",
+#                 "success": True,
+#                 "data": serializer.data}
+#             return Response(data=res, status=status.HTTP_201_CREATED)
+#
+#         res = {"msg": str(serializer.errors), "success": False, "data": None}
+#         return Response(data=res, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UploadMenuAPIView(APIView):
@@ -220,7 +173,7 @@ class CreateEmployeeAPIView(APIView):
         employee = Employee.objects.filter(
             Q(employee_no=employee_no)
         )
-        text = f"EMPLOYEE NO { employee_no } already exists"
+        text = f"EMPLOYEE NO {employee_no} already exists"
         if employee.exists():
             res = {
                 "msg": text,
@@ -349,10 +302,10 @@ class ResultsAPIView(APIView):
         consecutive_list = Menu.objects.filter(
             created_at__gte=start
         ).extra(select={
-                'day': connection.ops.date_trunc_sql(
-                    'day',
-                    'created_at')}
-                ).values('day', 'id').annotate(max_vote=Max('votes'))
+            'day': connection.ops.date_trunc_sql(
+                'day',
+                'created_at')}
+        ).values('day', 'id').annotate(max_vote=Max('votes'))
 
         # populate consecutive Days
         date_strs = [str(date.get('day')) for date in consecutive_list]

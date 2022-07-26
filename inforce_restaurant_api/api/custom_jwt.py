@@ -17,8 +17,8 @@ def jwt_payload_handler(user):
         'email': user.email,
         'full_name': user.first_name + ' ' + user.last_name,
         'is_superuser': user.is_superuser,
-        'exp': datetime.utcnow() + settings.SIMPLE_JWT.get(
-            'ACCESS_TOKEN_LIFETIME'
+        'exp': datetime.utcnow() + settings.JWT_AUTH.get(
+            'JWT_EXPIRATION_DELTA'
         ),
         'orig_iat': timegm(
             datetime.utcnow().utctimetuple())}
