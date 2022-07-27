@@ -1,14 +1,8 @@
-from datetime import timedelta
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
 
-# from api.custom_jwt import *
-
-from django.conf import settings
 from rest_framework import status
 from rest_framework.test import APITestCase
-
-import mock
 
 from api.models import User, Restaurant, Menu, Employee, Vote
 from api.token import get_token
@@ -196,3 +190,18 @@ class TestVoteMenuAPI(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
 
+class TestGetResultsAPI(APITestCase):
+
+    def setUp(self):
+        self.user = User.objects.create_superuser('admin', 'admin@admin.com', 'admin123')
+
+        self.restaurant = Restaurant.objects.create(name='Burger King', contact_no='+3809777777', address='Lviv')
+
+        self.file = SimpleUploadedFile("file.txt", b"abc", content_type="text/plain")
+
+        self.menu = Menu.objects.create(restaurant=self.restaurant, file=self.file, uploaded_by=self.user.username)
+
+    def test_get_result_of_current_day(self):
+        res = self.client.get(reverse("api:results"))
+        self.assertEqual(Menu.objects.count(), 1)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
