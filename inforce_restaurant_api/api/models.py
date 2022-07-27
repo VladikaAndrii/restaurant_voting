@@ -17,7 +17,7 @@ class User(AbstractUser):
     created_by = models.CharField(max_length=50, null=True, blank=True)
     email = models.EmailField(max_length=255, unique=True)
     USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = []
+    REQUIRED_FIELDS = ["username"]
 
     class Meta:
         ordering = ['-id']

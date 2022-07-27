@@ -20,22 +20,6 @@ class UserSerializer(serializers.ModelSerializer):
         ]
 
 
-# class UserDetailSerializer(serializers.ModelSerializer):
-#
-#     id = serializers.CharField(read_only=True)
-#
-#     class Meta:
-#         model = User
-#         fields = [
-#             'id',
-#             'first_name',
-#             'last_name',
-#             'email',
-#             'phone',
-#             'username',
-#         ]
-
-
 class UserLoginSerializer(serializers.Serializer):
     token = serializers.CharField(allow_blank=True, read_only=True)
     password = serializers.CharField()

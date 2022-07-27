@@ -209,7 +209,7 @@ class VoteAPIView(APIView):
             menu.save()
             res = {
                 "msg": 'You voted successfully!',
-                "data": f"You voted for {menu_id} restaurant ",
+                "data": f"You voted for the restaurant with the number {menu_id}",
                 "success": True}
             return Response(data=res, status=status.HTTP_200_OK)
 
@@ -228,7 +228,7 @@ class ResultsAPIView(APIView):
             return Response(data=res, status=status.HTTP_200_OK)
         serializer = ResultMenuListSerializer(current_menu_qs)
         data = {
-            "msg": 'Menus found for today.',
+            "msg": 'The restaurant chosen today.',
             "data": serializer.data,
             "success": True
         }
