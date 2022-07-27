@@ -1,32 +1,18 @@
-from datetime import date, timedelta
-from datetime import datetime
-
-import datetime
-import jwt
+from .token import get_token
 from django.conf import settings
-from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import check_password
-from django.db import connection
-from django.db.models import F, Window
-from django.db.models import Max
 from django.db.models import Q
-from django.db.models.functions import Rank
 from rest_framework import generics
-from rest_framework import permissions
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import permissions
 
-# from .tasks import *
-from api.models import *
-from api.serializers import *
-from .custom_jwt import (
-    jwt_decode_handler
-)
+from api.models import User, Employee, Restaurant, Menu, Vote
+from api.serializers import UserSerializer, UserLoginSerializer, CreateRestaurantSerializer, \
+    UploadMenuSerializer, EmployeeSerializer, RestaurantListSerializer, MenuListSerializer, ResultMenuListSerializer
 
-todays_date = settings.CURRENT_DATE.date()
+today_date = settings.CURRENT_DATE.date()
 
 
 class RegisterUserAPIView(generics.CreateAPIView):
@@ -50,28 +36,20 @@ class UserLoginAPIView(APIView):
             user = User.objects.get(email=email)
             fullname = user.first_name + " " + user.last_name
             if check_password(password, user.password):
-                pyload = {
-                    "id": user.id,
-                    "full_name": fullname,
-                    "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=60),
-                    "iat": datetime.datetime.utcnow()
-                }
-
-                jwt_token = jwt.encode(pyload, settings.SECRET_KEY, algorithm="HS256")
+                jwt_token = get_token(user)
+                jwt_access_token = jwt_token["access"]
+                jwt_refresh_token = jwt_token["refresh"]
                 user.save()
-
-                response = Response()
-                response.set_cookie(key="jwt", value=jwt_token, httponly=True)
-
-                response.data = {
+                data = {
                     "msg": "Login success",
                     "success": True,
                     "data": {
                         "name": fullname,
                         "id": user.id,
-                        "token": jwt_token, }
+                        "access_token": jwt_access_token,
+                        "refresh_token": jwt_refresh_token}
                 }
-                return response
+                return Response(data=data, status=status.HTTP_202_ACCEPTED)
             else:
                 res = {
                     "msg": "Invalid login credentials",
@@ -83,42 +61,10 @@ class UserLoginAPIView(APIView):
             return Response(data=res, status=status.HTTP_200_OK)
 
 
-class UserLogoutView(APIView):
-    # permission_classes = (IsAuthenticated,)
-
-    def post(self, request):
-        response = Response()
-        response.delete_cookie("jwt")
-        response.data = {
-            "massage": "You successful logout!"
-        }
-        return response
-
-
 class CreateRestaurantAPIView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = CreateRestaurantSerializer
-
-
-# class CreateRestaurantAPIView(APIView):
-#     permission_classes = (permissions.IsAuthenticated,)
-#
-#     def post(self, request, format=None):
-#         # req = request.data
-#         # user = {'created_by': jwt.decode(request.auth).get('id')}
-#         # req = dict(request.data)
-#         # req.update(user)
-#         serializer = CreateRestaurantSerializer(data=req)
-#         if serializer.is_valid():
-#             serializer.save()
-#             res = {
-#                 "msg": "Restaurant Created",
-#                 "success": True,
-#                 "data": serializer.data}
-#             return Response(data=res, status=status.HTTP_201_CREATED)
-#
-#         res = {"msg": str(serializer.errors), "success": False, "data": None}
-#         return Response(data=res, status=status.HTTP_400_BAD_REQUEST)
+    permission_classes = (permissions.IsAuthenticated,)
 
 
 class UploadMenuAPIView(APIView):
@@ -127,26 +73,19 @@ class UploadMenuAPIView(APIView):
     def post(self, request):
 
         try:
-            req = request.data.dict()
-            todays_date = settings.CURRENT_DATE.date()
-            menu = Menu.objects.filter(
-                Q(restaurant__id=int(req.get('restaurant')))
-                and Q(created_at__date=todays_date))
-            user = jwt_decode_handler(request.auth).get('username')
-
+            req = request.data
+            menu = Menu.objects.filter(restaurant=req.get('restaurant'), created_at__date=settings.CURRENT_DATE)
             if menu.exists():
                 res = {
                     "msg": "Menu already added.",
                     "success": False,
                     "data": None}
                 return Response(data=res, status=status.HTTP_200_OK)
-
             serializer = UploadMenuSerializer(data=req)
-
             if serializer.is_valid():
-                serializer.save(uploaded_by=user)
+                serializer.save()
                 res = {
-                    "msg": "Menu uploaded",
+                    "msg": "Menu successful uploaded",
                     "success": True,
                     "data": serializer.data}
                 return Response(data=res, status=status.HTTP_201_CREATED)
@@ -168,7 +107,7 @@ class CreateEmployeeAPIView(APIView):
     def post(self, request):
         req = request.data
 
-        user = jwt_decode_handler(request.auth).get('username')
+        user = request.user.username
         employee_no = req.get('employee_no')
         employee = Employee.objects.filter(
             Q(employee_no=employee_no)
@@ -186,10 +125,10 @@ class CreateEmployeeAPIView(APIView):
         if serializer.is_valid():
             try:
                 new_user = User.objects.create(
-                    username=req.get('email'),
                     email=req.get('email'),
                     first_name=req.get('first_name').capitalize(),
                     last_name=req.get('last_name').capitalize(),
+                    username=req.get('username'),
                     is_active=True,
                     phone=req.get('phone'),
                     is_staff=True,
@@ -197,7 +136,7 @@ class CreateEmployeeAPIView(APIView):
 
                 )
 
-                password = User.objects.make_random_password(length=10)
+                password = req.get("password")
                 new_user.set_password(password)
                 new_user.save()
 
@@ -218,11 +157,11 @@ class CreateEmployeeAPIView(APIView):
 
                 serializer = UserSerializer(new_user)
 
-                res = {
-                    "msg": f"Employee successfully created.{text}",
+                es = {
+                    "msg": f"Employee successfully created.{employee_no}",
                     "data": serializer.data,
                     "success": True}
-                return Response(data=res, status=status.HTTP_201_CREATED)
+                return Response(data=es, status=status.HTTP_201_CREATED)
             except Exception as e:
                 res = {"msg": str(e), "data": None, "success": False}
                 return Response(data=res, status=status.HTTP_400_BAD_REQUEST)
@@ -238,9 +177,7 @@ class RestaurantListAPIView(generics.ListAPIView):
 class CurrentDayMenuList(APIView):
 
     def get(self, request):
-        todays_date = settings.CURRENT_DATE.date()
-
-        qs = Menu.objects.filter(Q(created_at__date=todays_date))
+        qs = Menu.objects.filter(Q(created_at__date=today_date))
         serializer = MenuListSerializer(qs, many=True)
         res = {"msg": 'success', "data": serializer.data, "success": True}
         return Response(data=res, status=status.HTTP_200_OK)
@@ -250,15 +187,14 @@ class VoteAPIView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get(self, request, menu_id):
-        username = jwt_decode_handler(request.auth).get('username')
-        todays_date = settings.CURRENT_DATE.date()
+        username = request.user.username
 
         employee = Employee.objects.get(user__username=username)
         menu = Menu.objects.get(id=menu_id)
 
         if Vote.objects.filter(
                 employee__user__username=username,
-                voted_at__date=todays_date,
+                voted_at__date=today_date,
                 menu__id=menu_id).exists():
             res = {"msg": 'You already voted!', "data": None, "success": False}
             return Response(data=res, status=status.HTTP_200_OK)
@@ -268,14 +204,12 @@ class VoteAPIView(APIView):
                 menu=menu
 
             )
+            new_vote.save()
             menu.votes += 1
             menu.save()
-
-            qs = Menu.objects.filter(Q(created_at__date=todays_date))
-            serializer = ResultMenuListSerializer(qs, many=True)
             res = {
                 "msg": 'You voted successfully!',
-                "data": serializer.data,
+                "data": f"You voted for {menu_id} restaurant ",
                 "success": True}
             return Response(data=res, status=status.HTTP_200_OK)
 
@@ -283,98 +217,19 @@ class VoteAPIView(APIView):
 class ResultsAPIView(APIView):
 
     def get(self, request):
-
-        today = date.today()
-
-        start = today - timedelta(days=today.weekday())
-
+        today = settings.CURRENT_DATE
         current_menu_qs = Menu.objects.filter(
-            Q(created_at__date=todays_date)).order_by('-votes')
-
-        if len(current_menu_qs) == 0:
+            Q(created_at__date=today)).order_by('-votes').first()
+        if not current_menu_qs:
             res = {
                 "msg": 'Results not found! no menus found for today.',
                 "data": None,
                 "success": False}
             return Response(data=res, status=status.HTTP_200_OK)
-
-        # Populate menu list from monday to today.
-        consecutive_list = Menu.objects.filter(
-            created_at__gte=start
-        ).extra(select={
-            'day': connection.ops.date_trunc_sql(
-                'day',
-                'created_at')}
-        ).values('day', 'id').annotate(max_vote=Max('votes'))
-
-        # populate consecutive Days
-        date_strs = [str(date.get('day')) for date in consecutive_list]
-
-        dates = [datetime.strptime(d, "%Y-%m-%d %H:%M:%S") for d in date_strs]
-
-        date_ints = set([d.toordinal() for d in dates])
-
-        if len(date_ints) == 1:
-            # If all unique
-            new_queryset = Menu.objects.filter(
-                created_at__date=todays_date).annotate(
-                rank=Window(
-                    expression=Rank(),
-                    order_by=F('votes').desc(),
-                )
-            )
-
-            result = [{"rank": item.rank,
-                       "restaurant": item.restaurant.name,
-                       "votes": item.votes} for item in new_queryset]
-
-            res = {"msg": 'success', "data": result, "success": True}
-            return Response(data=res, status=status.HTTP_200_OK)
-
-        elif max(date_ints) - min(date_ints) == 3:
-            # If consecutive winner found 3 times
-            list_ = [item for item in consecutive_list if str(item.get(
-                'day'))[:10] == str(todays_date)]
-            current_max = list_[0]
-            current_max_pk = current_max.get('id')
-            new_current_list = [
-                item.id for item in current_menu_qs
-                if item.id != current_max_pk]
-
-            new_queryset = Menu.objects.filter(id__in=new_current_list
-                                               ).annotate(
-                rank=Window(
-                    expression=Rank(),
-                    order_by=F('votes').desc(),
-                )
-            )
-
-            result = [
-                {
-                    "rank": item.rank,
-                    "votes": item.votes,
-                    "restaurant": item.restaurant.name
-                }
-                for item in new_queryset
-            ]
-
-            res = {"msg": 'success', "data": result, "success": True}
-            return Response(data=res, status=status.HTTP_200_OK)
-
-        else:
-            new_queryset = Menu.objects.filter(
-                created_at__date=todays_date
-            ).annotate(
-                rank=Window(
-                    expression=Rank(),
-                    order_by=F('votes').desc(),
-                )
-            )
-
-            result = [{"rank": item.rank,
-                       "votes": item.votes,
-                       "restaurant": item.restaurant.name,
-                       "file": item.file.url} for item in new_queryset]
-
-            res = {"msg": 'success', "data": result, "success": True}
-            return Response(data=res, status=status.HTTP_200_OK)
+        serializer = ResultMenuListSerializer(current_menu_qs)
+        data = {
+            "msg": 'Menus found for today.',
+            "data": serializer.data,
+            "success": True
+        }
+        return Response(data=data, status=status.HTTP_200_OK)

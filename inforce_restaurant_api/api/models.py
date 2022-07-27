@@ -11,12 +11,11 @@ class User(AbstractUser):
         default=uuid.uuid4,
         primary_key=True)
     phone = models.CharField(max_length=15)
-    email = models.EmailField(max_length=255, unique=True)
     password = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.CharField(max_length=50, null=True, blank=True)
-    username = None
+    email = models.EmailField(max_length=255, unique=True)
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 
@@ -29,6 +28,9 @@ class User(AbstractUser):
 
 class Employee(models.Model):
     """Represents employee class model"""
+    employee_no = models.CharField(
+        max_length=50,
+        unique=True)
     user = models.ForeignKey(
         User,
         null=True,

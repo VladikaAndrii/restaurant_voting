@@ -15,23 +15,25 @@ class UserSerializer(serializers.ModelSerializer):
             "last_name",
             "phone",
             "email",
-            "password"
+            "password",
+            "username",
         ]
 
 
-class UserDetailSerializer(serializers.ModelSerializer):
-
-    id = serializers.CharField(read_only=True)
-
-    class Meta:
-        model = User
-        fields = [
-            'id',
-            'first_name',
-            'last_name',
-            'email',
-            'phone',
-        ]
+# class UserDetailSerializer(serializers.ModelSerializer):
+#
+#     id = serializers.CharField(read_only=True)
+#
+#     class Meta:
+#         model = User
+#         fields = [
+#             'id',
+#             'first_name',
+#             'last_name',
+#             'email',
+#             'phone',
+#             'username',
+#         ]
 
 
 class UserLoginSerializer(serializers.Serializer):
@@ -44,9 +46,6 @@ class UserLoginSerializer(serializers.Serializer):
             'email',
             'password',
         ]
-        # extra_kwargs = {"password":
-        #                 {"write_only": True}
-        #                 }
         read_only_fields = ('id',)
 
 
@@ -96,6 +95,8 @@ class EmployeeSerializer(serializers.ModelSerializer):
             'last_name',
             'email',
             'phone',
+            "username",
+            'employee_no'
 
         ]
 
