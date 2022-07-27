@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/4.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
+import os
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -19,13 +20,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
+# SECRET_KEY = os.environ.get("SECRET_KEY")
 SECRET_KEY = 'django-insecure-sl6vh*dphivh2jzg$le09um!7d5w!5ph@uu9u3*penh#rdem3_'
 
 # SECURITY WARNING: don't run with debug turned on in production!
+# DEBUG = int(os.environ.get("DEBUG", default=0))
 DEBUG = True
 
 ALLOWED_HOSTS = ["127.0.0.1", "127.0.0.1:8000"]
-
+# ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS").split(" ")
 # Application definition
 
 INSTALLED_APPS = [
@@ -84,7 +87,6 @@ DATABASES = {
     }
 }
 
-# AUTH_USER_MODEL = 'authentication.AuthUser'
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
@@ -125,17 +127,6 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# REST_FRAMEWORK = {
-#     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-#     'PAGE_SIZE': 10,
-#     'DEFAULT_PERMISSION_CLASSESS': [
-#         'rest_framework.permissions.IsAuthenticated',
-#     ],
-#     # 'DEFAULT_PARSER_CLASSES': (
-#     #     'rest_framework.parsers.FormParser',
-#     #     'rest_framework.parsers.MultiPartParser'
-#     #  )
-# }
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=300),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),

@@ -25,6 +25,7 @@ class RegisterUserAPIView(generics.CreateAPIView):
         instance.save()
 
 
+
 class UserLoginAPIView(APIView):
     queryset = User.objects.all()
     serializer_class = UserLoginSerializer
