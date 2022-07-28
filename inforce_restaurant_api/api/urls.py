@@ -1,5 +1,6 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenVerifyView, TokenRefreshView
+from rest_framework.versioning import AcceptHeaderVersioning
 
 from api.views import (
     RegisterUserAPIView,
@@ -20,7 +21,7 @@ urlpatterns = [
     path(
         'registration/',
         RegisterUserAPIView.as_view(),
-        name="registration"),
+        name="registration", ),
     path(
         'login/',
         UserLoginAPIView.as_view(),
@@ -53,6 +54,5 @@ urlpatterns = [
         'results/',
         ResultsAPIView.as_view(),
         name="results"),
-    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify')
+    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]

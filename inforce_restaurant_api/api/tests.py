@@ -42,8 +42,6 @@ class TestLoginClientAPI(APITestCase):
         self.assertEqual(status, True)
 
 
-# Passed
-
 class TestCreateRestaurantAPI(APITestCase):
 
     def setUp(self):
@@ -76,8 +74,6 @@ class TestCreateRestaurantAPI(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
 
-# pass
-
 class TestCreateUploadMenuAPI(APITestCase):
 
     def setUp(self):
@@ -104,8 +100,6 @@ class TestCreateUploadMenuAPI(APITestCase):
         res = self.client.post(reverse("api:upload-menu"), data=self.payload, format="multipart")
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
-
-# pass
 
 class TestCreateEmployeeAPI(APITestCase):
 
@@ -205,3 +199,5 @@ class TestGetResultsAPI(APITestCase):
         res = self.client.get(reverse("api:results"))
         self.assertEqual(Menu.objects.count(), 1)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+
