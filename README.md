@@ -30,28 +30,36 @@ This is a REST API for voting restaurant menus.
 
 [View all the other dependencies](.requirements.txt)
 
+## API Versioning
+You can pass the version of the application in the header
+Example: {"Accept": "application/json; version=1"}
+Supported versions: 1, 2
+Default version: 2.
+
+
 ## API Endpoints
 
-You can view the full [Postman Collection Here.](https://www.getpostman.com/collections/f11cb32c01901cee1a4c)
+You can view the full [Postman Collection Here.](https://www.postman.com/collections/7f8ee5aa4d341f11646b)
 
 Some endpoints require a token for authentication. The API call should have the token in Authorization header.
 
-    `{'Authorization': 'Bearer': <token>}`
+    `{'Authorization': "Bearer <token>"}`
 
 
 
 
-| EndPoint                        |                 Functionality |
-|:--------------------------------|------------------------------:|
-| POST /api/v1/registration/      |               Register a user |
-| POST /api/v1/create_employee/   |        Creates a new employee |
-| POST /api/v1/login/             |                    User login |
-| POST /api/v1/create_restaurant/ |             Create restaurant |
-| POST /api/v1/upload_menu        |                      Add menu |
-| GET /api/v1/restaurants/        |          List all restaurants |
-| GET /api/v1/menu_list/          | List all menus of current day |
-| GET /api/v1/vote/:id/           |                     Vote menu |
-| GET /api/v1/results/            |       Show results of the day |
+| EndPoint                     |                 Functionality |
+|:-----------------------------|------------------------------:|
+| POST /api/registration/      |               Register a user |
+| POST /api/create_employee/   |        Creates a new employee |
+| POST /api/login/             |                    User login |
+| POST /api/create_restaurant/ |             Create restaurant |
+| POST /api/upload_menu        |                      Add menu |
+| GET /api/restaurants/        |          List all restaurants |
+| GET /api/menu_list/          | List all menus of current day |
+| GET /api/vote/:id/           |                     Vote menu |
+| GET /api/results/            |       Show results of the day |
+| POST /token/refresh/         |      Refreshes your JWT token |
 
 ## Responses
 
@@ -60,6 +68,6 @@ The API responds with JSON data by default.
 
 ## Request examples
 
-Request GET /api/v1/results/
+Request GET /api/results/
 
-curl -H "Authorization: Bearer <your_token>" -H "Content-Type: application/json" https://localhost:8000/api/v1/results/
+curl -H "Authorization: Bearer <your_token>" -H "Content-Type: application/json" https://localhost:8000/api/results/

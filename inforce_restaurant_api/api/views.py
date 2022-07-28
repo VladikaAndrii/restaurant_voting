@@ -7,7 +7,6 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import permissions
-from rest_framework.versioning import AcceptHeaderVersioning
 
 from api.models import User, Employee, Restaurant, Menu, Vote
 from api.serializers import UserSerializer, UserLoginSerializer, CreateRestaurantSerializer, \
@@ -24,7 +23,6 @@ class RegisterUserAPIView(generics.CreateAPIView):
         instance = serializer.save()
         instance.set_password(instance.password)
         instance.save()
-
 
 
 class UserLoginAPIView(APIView):
