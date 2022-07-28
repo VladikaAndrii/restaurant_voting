@@ -8,7 +8,23 @@ This is a REST API for voting restaurant menus.
 
 ### Development
 
+Uses the default Django development server.
 
+1. Update the environment variables in the **docker-compose.yml** and **.env.dev**.
+2. Build the images and run the containers:
+
+    $ docker-compose up -d --build`
+3. Create migrations and apply them into database. NOTE the containers must be running:
+      $ docker-compose exec web python manage.py makemigrations`
+      $ docker-compose exec web python manage.py migrate`
+
+4. Test it out at http://localhost:8000.
+
+#### Running Tests in Development 
+
+    $ docker-compose exec web python manage.py test
+    
+NOTE: Before you execute the command above. The containers must be up a running.
 
 ## API Features
 
