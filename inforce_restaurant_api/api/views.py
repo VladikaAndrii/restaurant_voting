@@ -39,7 +39,6 @@ class UserLoginAPIView(APIView):
                 jwt_token = get_token(user)
                 jwt_access_token = jwt_token["access"]
                 jwt_refresh_token = jwt_token["refresh"]
-                user.save()
                 data = {
                     "msg": "Login success",
                     "success": True,
@@ -146,15 +145,6 @@ class CreateEmployeeAPIView(APIView):
                     created_by=user
                 )
 
-                login_site = settings.LOGIN_REDIRECT_URL
-
-                ctx = {
-                    "username": new_user.username,
-                    "password": password,
-                    "link": login_site,
-                    'user_email': new_user.email
-                }
-
                 serializer = UserSerializer(new_user)
 
                 es = {
@@ -177,8 +167,8 @@ class RestaurantListAPIView(generics.ListAPIView):
 class CurrentDayMenuList(APIView):
 
     def get(self, request):
-        qs = Menu.objects.filter(Q(created_at__date=today_date))
-        serializer = MenuListSerializer(qs, many=True)
+        query = Menu.objects.filter(Q(created_at__date=today_date))
+        serializer = MenuListSerializer(query, many=True)
         res = {"msg": 'success', "data": serializer.data, "success": True}
         return Response(data=res, status=status.HTTP_200_OK)
 
